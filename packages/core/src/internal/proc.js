@@ -231,7 +231,16 @@ export default function proc(env, iterator, parentContext, parentEffectId, meta,
     }
 
     let isSync = false
+    let effect
     function nextWrapper(arg, isErr) {
+      function formatArg(arg) {
+        if (arg && arg.meta) {
+          return 'saga-' + arg.meta.name
+        } else {
+          return arg
+        }
+      }
+      console.log('effect:', effect && effect.type, '\nisSync:', isSync, '\nresult:', formatArg(arg))
       if (isSync) {
         resultPointer = { arg, isErr }
       } else {
@@ -283,6 +292,7 @@ export default function proc(env, iterator, parentContext, parentEffectId, meta,
 
         if (!result.done) {
           isSync = true // true
+          effect = result.value
           digestEffect(result.value, parentEffectId, '', nextWrapper)
           isSync = false
         } else {

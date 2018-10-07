@@ -519,6 +519,8 @@ test('inter-saga fork/take back from forked child 1', () => {
   })
   store.dispatch(END)
 })
+
+// TODO branch print-is-sync. run this case and you can see most put/take are not sync 😔
 test('deeply nested forks/puts', () => {
   const actual = []
   const middleware = sagaMiddleware()
