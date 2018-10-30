@@ -48,7 +48,7 @@ function createTaskIterator({ context, fn, args }) {
   }
 }
 
-export function runPutEffect(env, { channel, action, resolve }, cb, { resolvePromise }) {
+export function runPutEffect(env, { channel, action, resolve }, cb, task, effectId, { resolvePromise }) {
   /**
    Schedule the put in case another saga is holding a lock.
    The put will be executed atomically. ie nested puts will execute after
@@ -93,7 +93,7 @@ export function runTakeEffect(env, { channel = env.stdChannel, pattern, maybe },
   cb.cancel = takeCb.cancel
 }
 
-export function runCallEffect(env, { context, fn, args }, cb, { effectId, resolvePromise, resolveIterator }) {
+export function runCallEffect(env, { context, fn, args }, cb, task, effectId, { resolvePromise, resolveIterator }) {
   // catch synchronous failures; see #152
   try {
     const result = fn.apply(context, args)
@@ -130,30 +130,30 @@ export function runCPSEffect(env, { context, fn, args }, cb) {
   }
 }
 
-export function runForkEffect(env, { context, fn, args, detached }, cb, { effectId, taskContext, taskQueue }) {
+export function runForkEffect(env, { context, fn, args, detached }, cb, task, effectId) {
   const taskIterator = createTaskIterator({ context, fn, args })
   const meta = getIteratorMetaInfo(taskIterator, fn)
 
   immediately(() => {
-    const task = proc(env, taskIterator, taskContext, effectId, meta, detached, noop)
+    const child = proc(env, taskIterator, task.context, effectId, meta, detached, noop)
 
     if (detached) {
-      cb(task)
+      cb(child)
     } else {
-      if (task._isRunning) {
-        taskQueue.addTask(task)
-        cb(task)
-      } else if (task._error) {
-        taskQueue.abort(task._error)
+      if (child.isRunning()) {
+        task.queue.addTask(child)
+        cb(child)
+      } else if (child.isAborted()) {
+        task.queue.abort(child.error())
       } else {
-        cb(task)
+        cb(child)
       }
     }
   })
   // Fork effects are non cancellables
 }
 
-export function runJoinEffect(env, taskOrTasks, cb, { task }) {
+export function runJoinEffect(env, taskOrTasks, cb, task) {
   if (is.array(taskOrTasks)) {
     if (taskOrTasks.length === 0) {
       cb([])
@@ -183,7 +183,7 @@ export function runJoinEffect(env, taskOrTasks, cb, { task }) {
   }
 }
 
-export function runCancelEffect(env, taskOrTasks, cb, { task }) {
+export function runCancelEffect(env, taskOrTasks, cb, task) {
   if (taskOrTasks === SELF_CANCELLATION) {
     cancelSingleTask(task)
   } else if (is.array(taskOrTasks)) {
@@ -202,7 +202,7 @@ export function runCancelEffect(env, taskOrTasks, cb, { task }) {
   }
 }
 
-export function runAllEffect(env, effects, cb, { effectId, digestEffect }) {
+export function runAllEffect(env, effects, cb, task, effectId, { digestEffect }) {
   const keys = Object.keys(effects)
   if (keys.length === 0) {
     cb(is.array(effects) ? [] : {})
@@ -213,7 +213,7 @@ export function runAllEffect(env, effects, cb, { effectId, digestEffect }) {
   keys.forEach(key => digestEffect(effects[key], effectId, key, childCallbacks[key]))
 }
 
-export function runRaceEffect(env, effects, cb, { effectId, digestEffect }) {
+export function runRaceEffect(env, effects, cb, task, effectId, { digestEffect }) {
   let completed
   const keys = Object.keys(effects)
   const childCbs = {}
@@ -285,20 +285,20 @@ export function runChannelEffect(env, { pattern, buffer }, cb) {
   cb(chan)
 }
 
-export function runCancelledEffect(env, data, cb, { mainTask }) {
-  cb(mainTask._isCancelled)
+export function runCancelledEffect(env, data, cb, task) {
+  cb(task.mainTask._isCancelled)
 }
 
 export function runFlushEffect(env, channel, cb) {
   channel.flush(cb)
 }
 
-export function runGetContextEffect(env, prop, cb, { taskContext }) {
-  cb(taskContext[prop])
+export function runGetContextEffect(env, prop, cb, task) {
+  cb(task.context[prop])
 }
 
-export function runSetContextEffect(env, props, cb, { taskContext }) {
-  assignWithSymbols(taskContext, props)
+export function runSetContextEffect(env, props, cb, task) {
+  assignWithSymbols(task.context, props)
   cb()
 }
 
