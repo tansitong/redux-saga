@@ -289,10 +289,6 @@ export default function proc(env, iterator, parentContext, parentEffectId, meta,
         if (env.onError) {
           env.onError(result)
         }
-        if (env.logError){
-          // TODO: could we skip this when _deferredEnd is attached?
-          env.logError(result)
-        }
       }
       task._error = result
       task._isAborted = true

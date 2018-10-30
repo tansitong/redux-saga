@@ -25,9 +25,14 @@ export function runSaga(options, saga, ...args) {
     getState,
     context = {},
     sagaMonitor,
-    logger,
+    logger = _log,
     effectMiddlewares,
-    onError,
+    onError = function logError(err) {
+      logger('error', err)
+      if (err && err.sagaStack) {
+        logger('error', err.sagaStack)
+      }
+    },
   } = options
 
   const effectId = nextSagaId()
@@ -56,14 +61,6 @@ export function runSaga(options, saga, ...args) {
     }
   }
 
-  const log = logger || _log
-  const logError = err => {
-    log('error', err)
-    if (err && err.sagaStack) {
-      log('error', err.sagaStack)
-    }
-  }
-
   const middleware = effectMiddlewares && compose(...effectMiddlewares)
   const finalizeRunEffect = runEffect => {
     if (is.func(middleware)) {
@@ -81,7 +78,6 @@ export function runSaga(options, saga, ...args) {
     dispatch: wrapSagaDispatch(dispatch),
     getState,
     sagaMonitor,
-    logError,
     onError,
     finalizeRunEffect,
   }
