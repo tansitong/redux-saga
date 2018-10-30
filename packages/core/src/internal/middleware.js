@@ -9,14 +9,6 @@ export default function sagaMiddlewareFactory({ context = {}, ...options } = {})
   let boundRunSaga
 
   if (process.env.NODE_ENV !== 'production') {
-    if (is.notUndef(logger)) {
-      check(logger, is.func, 'options.logger passed to the Saga middleware is not a function!')
-    }
-
-    if (is.notUndef(onError)) {
-      check(onError, is.func, 'options.onError passed to the Saga middleware is not a function!')
-    }
-
     if (is.notUndef(options.emitter)) {
       check(options.emitter, is.func, 'options.emitter passed to the Saga middleware is not a function!')
     }

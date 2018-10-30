@@ -56,9 +56,8 @@ export function runSaga(options, saga, ...args) {
   }
 
   if (process.env.NODE_ENV !== 'production') {
-    if (is.notUndef(onError)) {
-      check(onError, is.func, 'onError must be a function')
-    }
+    check(onError, is.func, 'onError passed to the redux-saga is not a function!')
+    check(logger, is.func, 'logger passed to the redux-saga is not a function!')
   }
 
   const middleware = effectMiddlewares && compose(...effectMiddlewares)
