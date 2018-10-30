@@ -5,7 +5,7 @@ import { identity } from './utils'
 import { runSaga } from './runSaga'
 
 export default function sagaMiddlewareFactory({ context = {}, ...options } = {}) {
-  const { sagaMonitor, logger, onError, effectMiddlewares } = options
+  const { sagaMonitor, onError, effectMiddlewares } = options
   let boundRunSaga
 
   if (process.env.NODE_ENV !== 'production') {
@@ -24,7 +24,6 @@ export default function sagaMiddlewareFactory({ context = {}, ...options } = {})
       dispatch,
       getState,
       sagaMonitor,
-      logger,
       onError,
       effectMiddlewares,
     })

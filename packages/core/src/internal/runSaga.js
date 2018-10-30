@@ -1,6 +1,6 @@
 import * as is from '@redux-saga/is'
 import { compose } from 'redux'
-import { check, uid as nextSagaId, wrapSagaDispatch, noop, log as _log } from './utils'
+import { check, uid as nextSagaId, wrapSagaDispatch, noop, log } from './utils'
 import proc, { getMetaInfo } from './proc'
 import { stdChannel } from './channel'
 import { immediately } from './scheduler'
@@ -25,12 +25,11 @@ export function runSaga(options, saga, ...args) {
     getState,
     context = {},
     sagaMonitor,
-    logger = _log,
     effectMiddlewares,
     onError = function logError(err) {
-      logger('error', err)
+      log('error', err)
       if (err && err.sagaStack) {
-        logger('error', err.sagaStack)
+        log('error', err.sagaStack)
       }
     },
   } = options
@@ -57,7 +56,6 @@ export function runSaga(options, saga, ...args) {
 
   if (process.env.NODE_ENV !== 'production') {
     check(onError, is.func, 'onError passed to the redux-saga is not a function!')
-    check(logger, is.func, 'logger passed to the redux-saga is not a function!')
   }
 
   const middleware = effectMiddlewares && compose(...effectMiddlewares)
